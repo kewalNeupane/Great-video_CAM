@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Video Chat with Short Codes</title>
+</head>
+<body>
+  <h2>Hello great guys (GREAT GROUP)</h2>
+
+  <p>Set your code: <input type="text" id="myId" placeholder="e.g. 123" /></p>
+  <button onclick="startPeer()">Start with this code</button>
+
+  <p>Your Code: <span id="yourIdDisplay"></span></p>
+
+  <p>Connect to code: <input type="text" id="connectToId" placeholder="e.g. 123" /></p>
+  <button onclick="callUser()">Call</button>
+
+  <h3>Your Camera:</h3>
+  <video id="yourVideo" autoplay muted playsinline></video>
+
+  <h3>Friend's Camera:</h3>
+  <video id="friendVideo" autoplay playsinline></video>
+
+  <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+  <script>
+    let peer;
+    let localStream;
+
+    const yourVideo = document.getElementById("yourVideo");
+    const friendVideo = document.getElementById("friendVideo");
+
+    async function startPeer() {
+      const myCustomId = document.getElementById("myId").value;
+      if (!myCustomId) return alert("Enter your custom code!");
+
+      peer = new Peer(myCustomId);
+
+      document.getElementById("yourIdDisplay").textContent = myCustomId;
+
+      // Get camera and mic
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        yourVideo.srcObject = localStream;
+      } catch (err) {
+        alert("Camera access denied or not available.");
+        return;
+      }
+
+      peer.on('call', call => {
+        call.answer(localStream);
+        call.on('stream', remoteStream => {
+          friendVideo.srcObject = remoteStream;
+        });
+      });
+
+      peer.on('error', err => {
+        alert("Error: " + err.message);
+      });
+    }
+
+    function callUser() {
+      const friendId = document.getElementById("connectToId").value;
+      if (!friendId || !peer) return alert("Enter a code and make sure your peer is started.");
+
+      const call = peer.call(friendId, localStream);
+      call.on('stream', remoteStream => {
+        friendVideo.srcObject = remoteStream;
+      });
+    }
+  </script>
+</body>
+</html>
